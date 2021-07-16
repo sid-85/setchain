@@ -1167,6 +1167,11 @@ func (am *AccountManager) GetCodeSize(accountName common.Name) (uint64, error) {
 
 // CanTransfer check if can transfer.
 func (am *AccountManager) CanTransfer(accountName common.Name, assetID uint64, value *big.Int, extAssetID uint64, extRatio uint64) (bool, error) {
+	if sign := value.Sign(); sign == 0 {
+		return true, nil
+	} else if sign == -1 {
+		return false, ErrNegativeValue
+	}
 	acct, err := am.GetAccountByName(accountName)
 	if err != nil {
 		return false, err
