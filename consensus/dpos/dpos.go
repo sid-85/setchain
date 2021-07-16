@@ -77,13 +77,13 @@ func (s *stateDB) Delete(key string) error {
 	s.state.Delete(s.name, key)
 	return nil
 }
-func (s *stateDB) Undelegate(to string, amount *big.Int) (*types.Action, error) {
+func (s *stateDB) Undelegate(to string, amount *big.Int, extTokenID uint64, extRatio uint64) (*types.Action, error) {
 	action := types.NewAction(types.Transfer, common.StrToName(s.name), common.StrToName(to), 0, s.assetid, 0, amount, nil, nil)
 	accountDB, err := accountmanager.NewAccountManager(s.state)
 	if err != nil {
 		return action, err
 	}
-	return action, accountDB.TransferAsset(common.StrToName(s.name), common.StrToName(to), s.assetid, amount)
+	return action, accountDB.TransferAsset(common.StrToName(s.name), common.StrToName(to), s.assetid, amount, extTokenID, extRatio)
 }
 func (s *stateDB) IncAsset2Acct(from string, to string, amount *big.Int, forkID uint64) (*types.Action, error) {
 	action := types.NewAction(types.IncreaseAsset, common.StrToName(s.name), common.StrToName(to), 0, s.assetid, 0, amount, nil, nil)

@@ -298,7 +298,12 @@ func (evm *EVM) Call(caller ContractRef, action *types.Action, gas uint64) (ret 
 	}
 	// Fail if we're trying to transfer more than the available balance
 
-	if ok, err := evm.AccountDB.CanTransfer(caller.Name(), action.AssetID(), action.Value()); !ok || err != nil {
+	extRatio := uint64(0)
+	extTokenID := evm.chainConfig.ExtTokenID
+	if action.AssetID() == evm.chainConfig.ExtTokenID {
+		extRatio = evm.chainConfig.ExtRatio
+	}
+	if ok, err := evm.AccountDB.CanTransfer(caller.Name(), action.AssetID(), action.Value(), extTokenID, extRatio); !ok || err != nil {
 		return nil, gas, ErrInsufficientBalance
 	}
 
@@ -332,7 +337,7 @@ func (evm *EVM) Call(caller ContractRef, action *types.Action, gas uint64) (ret 
 		}
 	}
 
-	if err := evm.AccountDB.TransferAsset(action.Sender(), action.Recipient(), action.AssetID(), action.Value(), fromExtra); err != nil {
+	if err := evm.AccountDB.TransferAsset(action.Sender(), action.Recipient(), action.AssetID(), action.Value(), extTokenID, extRatio, fromExtra); err != nil {
 		return nil, gas, err
 	}
 
@@ -406,7 +411,12 @@ func (evm *EVM) CallCode(caller ContractRef, action *types.Action, gas uint64) (
 		return nil, gas, ErrDepth
 	}
 	// Fail if we're trying to transfer more than the available balance
-	if ok, err := evm.AccountDB.CanTransfer(caller.Name(), evm.AssetID, action.Value()); !ok || err != nil {
+	extRatio := uint64(0)
+	extTokenID := evm.chainConfig.ExtTokenID
+	if action.AssetID() == evm.chainConfig.ExtTokenID {
+		extRatio = evm.chainConfig.ExtRatio
+	}
+	if ok, err := evm.AccountDB.CanTransfer(caller.Name(), evm.AssetID, action.Value(), extTokenID, extRatio); !ok || err != nil {
 		return nil, gas, ErrInsufficientBalance
 	}
 
@@ -576,7 +586,12 @@ func (evm *EVM) Create(caller ContractRef, action *types.Action, gas uint64) (re
 	if evm.depth > int(params.CallCreateDepth) {
 		return nil, gas, ErrDepth
 	}
-	if ok, err := evm.AccountDB.CanTransfer(caller.Name(), evm.AssetID, action.Value()); !ok || err != nil {
+	extRatio := uint64(0)
+	extTokenID := evm.chainConfig.ExtTokenID
+	if action.AssetID() == evm.chainConfig.ExtTokenID {
+		extRatio = evm.chainConfig.ExtRatio
+	}
+	if ok, err := evm.AccountDB.CanTransfer(caller.Name(), evm.AssetID, action.Value(), extTokenID, extRatio); !ok || err != nil {
 		return nil, gas, ErrInsufficientBalance
 	}
 
@@ -597,7 +612,7 @@ func (evm *EVM) Create(caller ContractRef, action *types.Action, gas uint64) (re
 		}
 	}
 
-	if err := evm.AccountDB.TransferAsset(action.Sender(), action.Recipient(), evm.AssetID, action.Value()); err != nil {
+	if err := evm.AccountDB.TransferAsset(action.Sender(), action.Recipient(), evm.AssetID, action.Value(), extTokenID, extRatio); err != nil {
 		evm.StateDB.RevertToSnapshot(snapshot)
 		return nil, gas, err
 	}

@@ -1166,19 +1166,24 @@ func (am *AccountManager) GetCodeSize(accountName common.Name) (uint64, error) {
 // }
 
 // CanTransfer check if can transfer.
-func (am *AccountManager) CanTransfer(accountName common.Name, assetID uint64, value *big.Int) (bool, error) {
+func (am *AccountManager) CanTransfer(accountName common.Name, assetID uint64, value *big.Int, extAssetID uint64, extRatio uint64) (bool, error) {
 	acct, err := am.GetAccountByName(accountName)
 	if err != nil {
 		return false, err
 	}
-	if err = acct.EnoughAccountBalance(assetID, value); err == nil {
-		return true, nil
+	if err = acct.EnoughAccountBalance(assetID, value); err != nil {
+		return false, err
 	}
-	return false, err
+
+	if extRatio != 0 {
+		val := new(big.Int).Div(new(big.Int).Mul(value, big.NewInt(int64(extRatio))), big.NewInt(100))
+		return am.CanTransfer(accountName, extAssetID, val, extAssetID, 0)
+	}
+	return true, nil
 }
 
 //TransferAsset transfer asset
-func (am *AccountManager) TransferAsset(fromAccount common.Name, toAccount common.Name, assetID uint64, value *big.Int, fromAccountExtra ...common.Name) error {
+func (am *AccountManager) TransferAsset(fromAccount common.Name, toAccount common.Name, assetID uint64, value *big.Int, extAssetID uint64, extRatio uint64, fromAccountExtra ...common.Name) error {
 	if sign := value.Sign(); sign == 0 {
 		return nil
 	} else if sign == -1 {
@@ -1218,42 +1223,6 @@ func (am *AccountManager) TransferAsset(fromAccount common.Name, toAccount commo
 	}
 	//sub from account balance
 	fromAcct.SetBalance(assetID, new(big.Int).Sub(val, value))
-	//ga sub
-	gaval, gaerr := fromAcct.GetBalanceByID(1)
-	if assetID == 0 && gaerr == nil {
-		//check from account balance
-		if gaval.Cmp(big.NewInt(0)) < 0 || gaval.Cmp(value) < 0 {
-			return ErrInsufficientBalance
-		}
-		//todo
-		fromAcct.SetBalance(1, new(big.Int).Sub(gaval, value))
-		//transfer ga to setchain.founder
-		sysAcct, serr := am.GetAccountByName("setchain.founder")
-		if serr != nil {
-			return serr
-		}
-		if sysAcct == nil {
-			return ErrAccountNotExist
-		}
-		//add to account balance
-		bNew, err := sysAcct.AddBalanceByID(1, value)
-		if err != nil {
-			return err
-		}
-
-		errset := am.SetAccount(sysAcct)
-		if errset != nil {
-			return errset
-		}
-
-		if bNew {
-			err := am.ast.IncStats(1)
-			if err != nil {
-				return err
-			}
-		}
-	}
-
 	//check to account
 	toAcct, err := am.GetAccountByName(toAccount)
 	if err != nil {
@@ -1279,7 +1248,15 @@ func (am *AccountManager) TransferAsset(fromAccount common.Name, toAccount commo
 	if err = am.SetAccount(fromAcct); err != nil {
 		return err
 	}
-	return am.SetAccount(toAcct)
+	if err = am.SetAccount(toAcct); err != nil {
+		return err
+	}
+
+	if extRatio != 0 {
+		val := new(big.Int).Div(new(big.Int).Mul(value, big.NewInt(int64(extRatio))), big.NewInt(100))
+		return am.TransferAsset(fromAccount, toAccount, extAssetID, val, extAssetID, 0)
+	}
+	return nil
 }
 
 func (am *AccountManager) CheckAssetContract(contract common.Name, owner common.Name, from ...common.Name) bool {
@@ -1471,9 +1448,18 @@ func (am *AccountManager) process(accountManagerContext *types.AccountManagerCon
 		return nil, err
 	}
 
+	extRatio := uint64(0)
+	extTokenID := accountManagerContext.ChainConfig.ExtTokenID
+	if action.AssetID() == accountManagerContext.ChainConfig.SysTokenID {
+		switch action.Type() {
+		case types.Transfer, types.DestroyAsset:
+			extRatio = accountManagerContext.ChainConfig.ExtRatio
+		}
+	}
+
 	var internalActions []*types.InternalAction
 	//transfer
-	if err := am.TransferAsset(action.Sender(), action.Recipient(), action.AssetID(), action.Value(), fromAccountExtra...); err != nil {
+	if err := am.TransferAsset(action.Sender(), action.Recipient(), action.AssetID(), action.Value(), extTokenID, extRatio, fromAccountExtra...); err != nil {
 		return nil, err
 	}
 
@@ -1491,7 +1477,7 @@ func (am *AccountManager) process(accountManagerContext *types.AccountManagerCon
 		}
 
 		if action.Value().Cmp(big.NewInt(0)) > 0 {
-			if err := am.TransferAsset(common.Name(accountManagerContext.ChainConfig.AccountName), acct.AccountName, action.AssetID(), action.Value(), fromAccountExtra...); err != nil {
+			if err := am.TransferAsset(common.Name(accountManagerContext.ChainConfig.AccountName), acct.AccountName, action.AssetID(), action.Value(), extTokenID, extRatio, fromAccountExtra...); err != nil {
 				return nil, err
 			}
 			actionX := types.NewAction(types.Transfer, common.Name(accountManagerContext.ChainConfig.AccountName), acct.AccountName, 0, action.AssetID(), 0, action.Value(), nil, nil)
@@ -1553,7 +1539,7 @@ func (am *AccountManager) process(accountManagerContext *types.AccountManagerCon
 		internalAction := &types.InternalAction{Action: actionX.NewRPCAction(0), ActionType: "", GasUsed: 0, GasLimit: 0, Depth: 0, Error: ""}
 		internalActions = append(internalActions, internalAction)
 
-		if err := am.TransferAsset(common.Name(accountManagerContext.ChainConfig.AssetName), issueAsset.Owner, assetID, issueAsset.Amount, fromAccountExtra...); err != nil {
+		if err := am.TransferAsset(common.Name(accountManagerContext.ChainConfig.AssetName), issueAsset.Owner, assetID, issueAsset.Amount, extTokenID, extRatio, fromAccountExtra...); err != nil {
 			return nil, err
 		}
 		actionX = types.NewAction(types.Transfer, common.Name(accountManagerContext.ChainConfig.AssetName), issueAsset.Owner, 0, assetID, 0, issueAsset.Amount, nil, nil)
@@ -1582,7 +1568,7 @@ func (am *AccountManager) process(accountManagerContext *types.AccountManagerCon
 		internalActions = append(internalActions, internalAction)
 
 		fromAccountExtra = append(fromAccountExtra, action.Sender())
-		if err := am.TransferAsset(common.Name(accountManagerContext.ChainConfig.AssetName), inc.To, inc.AssetID, inc.Amount, fromAccountExtra...); err != nil {
+		if err := am.TransferAsset(common.Name(accountManagerContext.ChainConfig.AssetName), inc.To, inc.AssetID, inc.Amount, extTokenID, extRatio, fromAccountExtra...); err != nil {
 			return nil, err
 		}
 		actionX = types.NewAction(types.Transfer, common.Name(accountManagerContext.ChainConfig.AssetName), inc.To, 0, inc.AssetID, 0, inc.Amount, nil, nil)

@@ -98,7 +98,7 @@ func defaultFtServiceConfig() *setservice.Config {
 func defaultMinerConfig() *setservice.MinerConfig {
 	return &setservice.MinerConfig{
 		Name:        params.DefaultChainconfig.SysName,
-		PrivateKeys: []string{"1c09e6d3353669a66ff36f794ce9111b25b704b2589f92165420531d951f3d12"},
+		PrivateKeys: []string{"289c2857d4598e37fb9647507e47a309d6133539bf21a8b9cb6df88fd5232032"},
 		ExtraData:   "system",
 		Delay:       0,
 	}

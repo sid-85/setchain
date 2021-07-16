@@ -24,10 +24,10 @@ import (
 	"strings"
 	"time"
 
-	"github.com/ethereum/go-ethereum/log"
 	"github.com/Second-Earth/setchain/common"
 	"github.com/Second-Earth/setchain/state"
 	"github.com/Second-Earth/setchain/types"
+	"github.com/ethereum/go-ethereum/log"
 )
 
 // System dpos internal contract
@@ -312,7 +312,7 @@ func (sys *System) RefundCandidate(epoch uint64, candidate string, number uint64
 
 	// db
 	stake := new(big.Int).Mul(prod.Quantity, sys.config.unitStake())
-	action, err := sys.Undelegate(candidate, stake)
+	action, err := sys.Undelegate(candidate, stake, sys.config.ExtAssetID, sys.config.ExtAssetRatio)
 	if err != nil {
 		return fmt.Errorf("undelegate %v failed(%v)", stake, err)
 	}
@@ -478,7 +478,7 @@ func (sys *System) KickedCandidate(epoch uint64, candidate string, number uint64
 
 	// db
 	stake := new(big.Int).Mul(prod.Quantity, sys.config.unitStake())
-	action, err := sys.Undelegate(sys.config.SystemName, stake)
+	action, err := sys.Undelegate(sys.config.SystemName, stake, sys.config.ExtAssetID, sys.config.ExtAssetRatio)
 	if err != nil {
 		return fmt.Errorf("undelegate %v failed(%v)", stake, err)
 	}

@@ -82,7 +82,7 @@ func (dpos *Dpos) processAction(fid uint64, number uint64, chainCfg *params.Chai
 		if err != nil {
 			return nil, err
 		}
-		if err := accountDB.TransferAsset(action.Sender(), action.Recipient(), action.AssetID(), action.Value()); err != nil {
+		if err := accountDB.TransferAsset(action.Sender(), action.Recipient(), action.AssetID(), action.Value(), dpos.config.ExtAssetID, dpos.config.ExtAssetRatio); err != nil {
 			return nil, err
 		}
 	}

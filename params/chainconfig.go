@@ -41,6 +41,10 @@ type ChainConfig struct {
 	SysToken         string        `json:"systemToken"` // system token
 	SysTokenID       uint64        `json:"sysTokenID"`
 	SysTokenDecimals uint64        `json:"sysTokenDecimal"`
+	ExtToken         string        `json:"extraToken"` // system token
+	ExtTokenID       uint64        `json:"extTokenID"`
+	ExtTokenDecimals uint64        `json:"extTokenDecimal"`
+	ExtRatio         uint64        `json:"extRatio"`
 	ReferenceTime    uint64        `json:"referenceTime"`
 }
 
@@ -140,6 +144,8 @@ var DefaultChainconfig = &ChainConfig{
 	DposName:         "setchain.dpos",
 	FeeName:          "setchain.fee",
 	SysToken:         "settoken",
+	ExtToken:         "gatoken",
+	ExtRatio:         100,
 }
 
 func (cfg *ChainConfig) Copy() *ChainConfig {

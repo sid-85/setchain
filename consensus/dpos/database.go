@@ -57,7 +57,7 @@ type IDB interface {
 	SetTakeOver(uint64) error
 	GetTakeOver() (uint64, error)
 
-	Undelegate(string, *big.Int) (*types.Action, error)
+	Undelegate(string, *big.Int, uint64, uint64) (*types.Action, error)
 	IncAsset2Acct(string, string, *big.Int, uint64) (*types.Action, error)
 	AddBalance(to string, amount *big.Int, forkID uint64) (*types.Action, error)
 	GetBalanceByTime(name string, timestamp uint64) (*big.Int, error)

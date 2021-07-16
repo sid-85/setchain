@@ -58,7 +58,7 @@ func (ldb *levelDB) Delete(key string) error {
 func (ldb *levelDB) Delegate(string, *big.Int) error {
 	return nil
 }
-func (ldb *levelDB) Undelegate(string, *big.Int) (*types.Action, error) {
+func (ldb *levelDB) Undelegate(string, *big.Int, uint64, uint64) (*types.Action, error) {
 	return nil, nil
 }
 func (ldb *levelDB) IncAsset2Acct(string, string, *big.Int, uint64) (*types.Action, error) {

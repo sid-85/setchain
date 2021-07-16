@@ -77,6 +77,9 @@ type Config struct {
 	RoundPow                      []uint64 `json:"roundpow"`
 	Decimals                      uint64   `json:"decimals"`
 	AssetID                       uint64   `json:"assetID"`
+	ExtDecimals                   uint64   `json:"extDecimals"`
+	ExtAssetID                    uint64   `json:"extAssetID"`
+	ExtAssetRatio                 uint64   `json:"extAssetRatio"`
 	ReferenceTime                 uint64   `json:"referenceTime"`
 
 	// cache files

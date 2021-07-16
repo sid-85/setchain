@@ -1651,7 +1651,11 @@ func opCallEx(pc *uint64, evm *EVM, contract *Contract, memory *Memory, stack *S
 		}
 	}
 
-	err = evm.AccountDB.TransferAsset(action.Sender(), action.Recipient(), action.AssetID(), action.Value(), fromExtra)
+	extRatio := uint64(0)
+	if action.AssetID() == evm.chainConfig.ExtTokenID {
+		extRatio = evm.chainConfig.ExtRatio
+	}
+	err = evm.AccountDB.TransferAsset(action.Sender(), action.Recipient(), action.AssetID(), action.Value(), evm.chainConfig.ExtTokenID, extRatio, fromExtra)
 	//distribute gas
 	var assetName common.Name
 	assetFounder, _ := evm.AccountDB.GetAssetFounder(action.AssetID()) //get asset founder name

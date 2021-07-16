@@ -35,7 +35,7 @@ type IDatabase interface {
 	Put(key string, value []byte) error
 	Delete(key string) error
 
-	Undelegate(string, *big.Int) (*types.Action, error)
+	Undelegate(string, *big.Int, uint64, uint64) (*types.Action, error)
 	IncAsset2Acct(string, string, *big.Int, uint64) (*types.Action, error)
 	AddBalance(to string, amount *big.Int, forkID uint64) (*types.Action, error)
 	GetBalanceByTime(name string, timestamp uint64) (*big.Int, error)

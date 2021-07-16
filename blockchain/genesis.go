@@ -100,6 +100,9 @@ func dposConfig(cfg *params.ChainConfig) *dpos.Config {
 		BlockReward:                   cfg.DposCfg.BlockReward,
 		Decimals:                      cfg.SysTokenDecimals,
 		AssetID:                       cfg.SysTokenID,
+		ExtDecimals:                   cfg.ExtTokenDecimals,
+		ExtAssetID:                    cfg.ExtTokenID,
+		ExtAssetRatio:                 cfg.ExtRatio,
 		ReferenceTime:                 cfg.ReferenceTime,
 		RoundPow:                      cfg.DposCfg.RoundPow,
 		HalfEpoch:                     cfg.DposCfg.HalfEpoch,
@@ -398,6 +401,14 @@ func (g *Genesis) ToBlock(db fdb.Database) (*types.Block, []*types.Receipt, erro
 	g.Config.SysTokenID = assetInfo.AssetID
 	g.Config.SysTokenDecimals = assetInfo.Decimals
 
+	extAssetInfo, err := accountManager.GetAssetInfoByName(g.Config.ExtToken)
+	if err != nil {
+		return nil, nil, fmt.Errorf("genesis ext system asset err %v", err)
+	}
+
+	g.Config.ExtTokenID = extAssetInfo.AssetID
+	g.Config.ExtTokenDecimals = extAssetInfo.Decimals
+
 	sys := dpos.NewSystem(statedb, dposConfig(g.Config))
 	epoch, _ := sys.GetLastestEpoch()
 	for _, candidate := range g.AllocCandidates {
@@ -568,12 +579,12 @@ func DefaultGenesisAccounts() []*GenesisAccount {
 		&GenesisAccount{
 			Name:    params.DefaultChainconfig.SysName,
 			Founder: params.DefaultChainconfig.SysName,
-			PubKey:  common.HexToPubKey("0458fa19dc65b7eb3c7cdbf64654f1c248ad69271014ae947bcd185ed5bff2ce631ebb2759df14a0f9b6f6b822650507efb9409e0e42ff2fd451a136923dd96ba2"),
+			PubKey:  common.HexToPubKey("047db227d7094ce215c3a0f57e1bcc732551fe351f94249471934567e0f5dc1bf795962b8cccb87a2eb56b29fbe37d614e2f4c3c45b789ae4f1f51f4cb21972ffd"),
 		},
 		&GenesisAccount{
 			Name:    "setchain.test",
 			Founder: params.DefaultChainconfig.SysName,
-			PubKey:  common.HexToPubKey("0458fa19dc65b7eb3c7cdbf64654f1c248ad69271014ae947bcd185ed5bff2ce631ebb2759df14a0f9b6f6b822650507efb9409e0e42ff2fd451a136923dd96ba2"),
+			PubKey:  common.HexToPubKey("047db227d7094ce215c3a0f57e1bcc732551fe351f94249471934567e0f5dc1bf795962b8cccb87a2eb56b29fbe37d614e2f4c3c45b789ae4f1f51f4cb21972ffd"),
 		},
 		&GenesisAccount{
 			Name:    params.DefaultChainconfig.AccountName,
@@ -616,8 +627,8 @@ func DefaultGenesisAssets() []*GenesisAsset {
 			Owner:      params.DefaultChainconfig.SysName,
 			Founder:    params.DefaultChainconfig.SysName,
 			UpperLimit: new(big.Int).SetBytes(supply.Bytes()),
-		},&GenesisAsset{
-			Name:       "gatoken",
+		}, &GenesisAsset{
+			Name:       params.DefaultChainconfig.ExtToken,
 			Symbol:     "ga",
 			Amount:     supply,
 			Decimals:   18,

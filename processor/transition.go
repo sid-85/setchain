@@ -22,7 +22,6 @@ import (
 	"math/big"
 	"sort"
 
-	"github.com/ethereum/go-ethereum/log"
 	"github.com/Second-Earth/setchain/accountmanager"
 	"github.com/Second-Earth/setchain/common"
 	"github.com/Second-Earth/setchain/feemanager"
@@ -31,6 +30,7 @@ import (
 	"github.com/Second-Earth/setchain/txpool"
 	"github.com/Second-Earth/setchain/types"
 	"github.com/Second-Earth/setchain/utils/rlp"
+	"github.com/ethereum/go-ethereum/log"
 )
 
 var (
@@ -114,7 +114,7 @@ func (st *StateTransition) buyGas() error {
 	}
 	st.gas += st.action.Gas()
 	st.initialGas = st.action.Gas()
-	return st.account.TransferAsset(st.gasPayer, common.Name(st.chainConfig.FeeName), st.assetID, mgval)
+	return st.account.TransferAsset(st.gasPayer, common.Name(st.chainConfig.FeeName), st.assetID, mgval, st.chainConfig.ExtTokenID, 0)
 }
 
 // TransitionDb will transition the state by applying the current message and
@@ -162,7 +162,11 @@ func (st *StateTransition) TransitionDb() (ret []byte, usedGas uint64, failed bo
 		assetTransferFlag := true
 		snapshot := evm.StateDB.Snapshot()
 		for _, asset := range acct.Assets {
-			if err = evm.AccountDB.TransferAsset(st.action.Sender(), st.action.Recipient(), asset.AssetID, asset.Amount); err != nil {
+			extRatio := uint64(0)
+			if asset.AssetID == st.chainConfig.ExtTokenID {
+				extRatio = st.chainConfig.ExtRatio
+			}
+			if err = evm.AccountDB.TransferAsset(st.action.Sender(), st.action.Recipient(), asset.AssetID, asset.Amount, st.chainConfig.ExtTokenID, extRatio); err != nil {
 				vmerr = err
 				assetTransferFlag = false
 				break
@@ -467,7 +471,7 @@ func (st *StateTransition) distributeFee() error {
 
 func (st *StateTransition) refundGas() {
 	remaining := new(big.Int).Mul(new(big.Int).SetUint64(st.gas), st.gasPrice)
-	st.account.TransferAsset(common.Name(st.chainConfig.FeeName), st.gasPayer, st.assetID, remaining)
+	st.account.TransferAsset(common.Name(st.chainConfig.FeeName), st.gasPayer, st.assetID, remaining, st.chainConfig.ExtTokenID, 0)
 	st.gp.AddGas(st.gas)
 }
 
