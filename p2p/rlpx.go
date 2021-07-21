@@ -34,11 +34,11 @@ import (
 	"sync"
 	"time"
 
-	"github.com/ethereum/go-ethereum/common/bitutil"
-	"github.com/golang/snappy"
 	"github.com/Second-Earth/setchain/crypto"
 	"github.com/Second-Earth/setchain/crypto/ecies"
 	"github.com/Second-Earth/setchain/utils/rlp"
+	"github.com/ethereum/go-ethereum/common/bitutil"
+	"github.com/golang/snappy"
 	"golang.org/x/crypto/sha3"
 )
 
@@ -450,8 +450,8 @@ func readHandshakeMsg(msg interface{}, plainSize int, prv *ecdsa.PrivateKey, r i
 	if int(size)+2 > len(pack) {
 		pack = append(pack, make([]byte, int(size)+2-len(pack))...)
 	}
-	pack = pack[:size+2]
 	buf := pack[2:]
+	pack = pack[:size+2]
 	if _, err := io.ReadFull(r, buf); err != nil {
 		return pack, err
 	}
