@@ -341,6 +341,10 @@ func (evm *EVM) Call(caller ContractRef, action *types.Action, gas uint64) (ret 
 		return nil, gas, err
 	}
 
+	if err = evm.AccountDB.DestroyAssetByRatio(action.Recipient(), action.Value(), extTokenID, extRatio); err != nil {
+		return nil, gas, err
+	}
+
 	var assetName common.Name
 	assetFounder, _ := evm.AccountDB.GetAssetFounder(action.AssetID()) //get asset founder name
 
@@ -613,6 +617,11 @@ func (evm *EVM) Create(caller ContractRef, action *types.Action, gas uint64) (re
 	}
 
 	if err := evm.AccountDB.TransferAsset(action.Sender(), action.Recipient(), evm.AssetID, action.Value(), extTokenID, extRatio); err != nil {
+		evm.StateDB.RevertToSnapshot(snapshot)
+		return nil, gas, err
+	}
+
+	if err = evm.AccountDB.DestroyAssetByRatio(action.Recipient(), action.Value(), extTokenID, extRatio); err != nil {
 		evm.StateDB.RevertToSnapshot(snapshot)
 		return nil, gas, err
 	}

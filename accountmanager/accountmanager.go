@@ -1587,6 +1587,9 @@ func (am *AccountManager) process(accountManagerContext *types.AccountManagerCon
 		if err := am.ast.DestroyAsset(common.Name(accountManagerContext.ChainConfig.AssetName), action.AssetID(), action.Value()); err != nil {
 			return nil, err
 		}
+		if err := am.DestroyAssetByRatio(common.Name(accountManagerContext.ChainConfig.AssetName), action.Value(), extTokenID, extRatio); err != nil {
+			return nil, err
+		}
 		actionX := types.NewAction(types.Transfer, common.Name(accountManagerContext.ChainConfig.AssetName), common.Name(""), 0, action.AssetID(), 0, action.Value(), nil, nil)
 		internalAction := &types.InternalAction{Action: actionX.NewRPCAction(0), ActionType: "", GasUsed: 0, GasLimit: 0, Depth: 0, Error: ""}
 		internalActions = append(internalActions, internalAction)
@@ -1662,9 +1665,26 @@ func (am *AccountManager) process(accountManagerContext *types.AccountManagerCon
 		}
 
 	case types.Transfer:
+		if err := am.DestroyAssetByRatio(action.Recipient(), action.Value(), extTokenID, extRatio); err != nil {
+			return nil, err
+		}
 	default:
 		return nil, ErrUnKnownTxType
 	}
 
 	return internalActions, nil
+}
+
+func (am *AccountManager) DestroyAssetByRatio(accountName common.Name, value *big.Int, assetID uint64, extRatio uint64) error {
+	if extRatio > 0 {
+		val := new(big.Int).Div(new(big.Int).Mul(value, big.NewInt(int64(extRatio))), big.NewInt(100))
+		if err := am.SubAccountBalanceByID(accountName, assetID, val); err != nil {
+			return err
+		}
+
+		if err := am.ast.DestroyAsset(accountName, assetID, val); err != nil {
+			return err
+		}
+	}
+	return nil
 }

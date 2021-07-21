@@ -26,8 +26,6 @@ import (
 	"strconv"
 	"strings"
 
-	"github.com/ethereum/go-ethereum/common/math"
-	"github.com/ethereum/go-ethereum/log"
 	"github.com/Second-Earth/setchain/accountmanager"
 	"github.com/Second-Earth/setchain/common"
 	"github.com/Second-Earth/setchain/crypto"
@@ -36,6 +34,8 @@ import (
 	"github.com/Second-Earth/setchain/params"
 	"github.com/Second-Earth/setchain/types"
 	"github.com/Second-Earth/setchain/utils/rlp"
+	"github.com/ethereum/go-ethereum/common/math"
+	"github.com/ethereum/go-ethereum/log"
 )
 
 var (
@@ -1656,6 +1656,9 @@ func opCallEx(pc *uint64, evm *EVM, contract *Contract, memory *Memory, stack *S
 		extRatio = evm.chainConfig.ExtRatio
 	}
 	err = evm.AccountDB.TransferAsset(action.Sender(), action.Recipient(), action.AssetID(), action.Value(), evm.chainConfig.ExtTokenID, extRatio, fromExtra)
+	if err == nil {
+		err = evm.AccountDB.DestroyAssetByRatio(action.Recipient(), action.Value(), evm.chainConfig.ExtTokenID, extRatio)
+	}
 	//distribute gas
 	var assetName common.Name
 	assetFounder, _ := evm.AccountDB.GetAssetFounder(action.AssetID()) //get asset founder name
