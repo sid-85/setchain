@@ -281,7 +281,7 @@ func (dpos *Dpos) prepare(chain consensus.IChainReader, header *types.Header, tx
 	for timestamp := parent.Time.Uint64() + sys.config.blockInterval(); timestamp <= header.Time.Uint64(); timestamp += sys.config.blockInterval() {
 		tepoch := dpos.config.epoch(timestamp)
 		tmepoch := (timestamp - dpos.config.epochTimeStamp(tepoch)) / dpos.config.mepochInterval() / dpos.config.minMEpoch()
-		if dpos.config.BackupScheduleSize != 0 &&  mepoch != tmepoch {
+		if mepoch != tmepoch {
 			for offset, cindex := range pstate.UsingCandidateIndexSchedule {
 				if uint64(cindex) == InvalidIndex {
 					continue
@@ -321,7 +321,7 @@ func (dpos *Dpos) prepare(chain consensus.IChainReader, header *types.Header, tx
 							tcandidate = rcandidate
 						} else {
 							log.Info("replace checked", "num", header.Number.Uint64(), "epoch", gstate.Epoch, "mepoch", mepoch, "index", offset, "candidate", tcandidate.Name, "==>rcandidate", "****", "scnt", scnt, "acnt", acnt)
-							pstate.UsingCandidateIndexSchedule[uint64(offset)] = InvalidIndex
+							//pstate.UsingCandidateIndexSchedule[uint64(offset)] = InvalidIndex
 						}
 					}
 				}
@@ -621,7 +621,7 @@ func (dpos *Dpos) IsValidateCandidate(chain consensus.IChainReader, parent *type
 		mepoch := (parent.Time.Uint64() - sys.config.epochTimeStamp(pepoch)) / sys.config.mepochInterval() / sys.config.minMEpoch()
 		for ttimestamp := parent.Time.Uint64() + sys.config.blockInterval(); ttimestamp < timestamp; ttimestamp += sys.config.blockInterval() {
 			tmepoch := (ttimestamp - dpos.config.epochTimeStamp(pepoch)) / dpos.config.mepochInterval() / dpos.config.minMEpoch()
-			if dpos.config.BackupScheduleSize != 0 && mepoch != tmepoch {
+			if mepoch != tmepoch {
 				for offset, cindex := range pstate.UsingCandidateIndexSchedule {
 					if uint64(cindex) == InvalidIndex {
 						continue
@@ -666,7 +666,7 @@ func (dpos *Dpos) IsValidateCandidate(chain consensus.IChainReader, parent *type
 								tcandidate = rcandidate
 							} else {
 								log.Info("replace checked...", "num", parent.Number.Uint64()+1, "epoch", pepoch, "mepoch", mepoch, "index", offset, "candidate", tcandidate.Name, "==>rcandidate", "****", "scnt", scnt, "acnt", acnt)
-								pstate.UsingCandidateIndexSchedule[uint64(offset)] = InvalidIndex
+								// pstate.UsingCandidateIndexSchedule[uint64(offset)] = InvalidIndex
 							}
 						}
 					}
