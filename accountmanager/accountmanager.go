@@ -36,7 +36,6 @@ import (
 
 var (
 	acctRegExp          = regexp.MustCompile(`^([a-z][a-z0-9]{6,15})(?:\.([a-z0-9]{1,8})){0,1}$`)
-	acctRegExpFork1     = regexp.MustCompile(`^([a-z][a-z0-9]{11,15})(\.([a-z0-9]{2,16})){0,2}$`)
 	accountNameLength   = uint64(31)
 	acctManagerName     = "sysAccount"
 	acctInfoPrefix      = "acctInfo"
@@ -139,18 +138,6 @@ func SetAccountNameConfig(config *Config) bool {
 	acctRegExp = regexp
 	accountNameLength = config.AccountNameMaxLength
 	return true
-}
-
-func GetAccountNameRegExp() *regexp.Regexp {
-	return acctRegExp
-}
-
-func GetAccountNameRegExpFork1() *regexp.Regexp {
-	return acctRegExpFork1
-}
-
-func GetAccountNameLength() uint64 {
-	return accountNameLength
 }
 
 //SetAcctMangerName  set the global account manager name
@@ -289,12 +276,6 @@ func (am *AccountManager) checkAccountNameValid(fromName common.Name, accountNam
 	accountLevel, err := GetAccountNameLevel(accountName)
 	if err != nil {
 		return err
-	}
-
-	if accountLevel == mainAccount {
-		if !accountName.IsValid(acctRegExpFork1, accountNameLength) {
-			return fmt.Errorf("account %s is invalid", accountName.String())
-		}
 	}
 
 	if accountLevel == subAccount {
