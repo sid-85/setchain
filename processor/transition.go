@@ -163,7 +163,7 @@ func (st *StateTransition) TransitionDb() (ret []byte, usedGas uint64, failed bo
 		snapshot := evm.StateDB.Snapshot()
 		for _, asset := range acct.Assets {
 			extRatio := uint64(0)
-			if asset.AssetID == st.chainConfig.ExtTokenID {
+			if asset.AssetID == st.chainConfig.SysTokenID {
 				extRatio = st.chainConfig.ExtRatio
 			}
 			if err = evm.AccountDB.TransferAsset(st.action.Sender(), st.action.Recipient(), asset.AssetID, asset.Amount, st.chainConfig.ExtTokenID, extRatio); err != nil {

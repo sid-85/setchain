@@ -163,6 +163,9 @@ const (
 	//ForkID4 miner pubkey separate
 	ForkID4 = uint64(4)
 
+	// ga
+	ForkID5 = uint64(5)
+
 	// NextForkID is the id of next fork
 	NextForkID uint64 = ForkID4
 )

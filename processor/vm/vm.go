@@ -300,7 +300,8 @@ func (evm *EVM) Call(caller ContractRef, action *types.Action, gas uint64) (ret 
 
 	extRatio := uint64(0)
 	extTokenID := evm.chainConfig.ExtTokenID
-	if action.AssetID() == evm.chainConfig.ExtTokenID {
+	isContract, _ := evm.AccountDB.AccountHaveCode(caller.Name())
+	if !isContract && action.AssetID() == evm.chainConfig.SysTokenID {
 		extRatio = evm.chainConfig.ExtRatio
 	}
 	if ok, err := evm.AccountDB.CanTransfer(caller.Name(), action.AssetID(), action.Value(), extTokenID, extRatio); !ok || err != nil {
@@ -417,7 +418,8 @@ func (evm *EVM) CallCode(caller ContractRef, action *types.Action, gas uint64) (
 	// Fail if we're trying to transfer more than the available balance
 	extRatio := uint64(0)
 	extTokenID := evm.chainConfig.ExtTokenID
-	if action.AssetID() == evm.chainConfig.ExtTokenID {
+	isContract, _ := evm.AccountDB.AccountHaveCode(caller.Name())
+	if !isContract && action.AssetID() == evm.chainConfig.SysTokenID {
 		extRatio = evm.chainConfig.ExtRatio
 	}
 	if ok, err := evm.AccountDB.CanTransfer(caller.Name(), evm.AssetID, action.Value(), extTokenID, extRatio); !ok || err != nil {
@@ -592,7 +594,7 @@ func (evm *EVM) Create(caller ContractRef, action *types.Action, gas uint64) (re
 	}
 	extRatio := uint64(0)
 	extTokenID := evm.chainConfig.ExtTokenID
-	if action.AssetID() == evm.chainConfig.ExtTokenID {
+	if action.AssetID() == evm.chainConfig.SysTokenID {
 		extRatio = evm.chainConfig.ExtRatio
 	}
 	if ok, err := evm.AccountDB.CanTransfer(caller.Name(), evm.AssetID, action.Value(), extTokenID, extRatio); !ok || err != nil {

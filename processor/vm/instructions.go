@@ -1652,7 +1652,8 @@ func opCallEx(pc *uint64, evm *EVM, contract *Contract, memory *Memory, stack *S
 	}
 
 	extRatio := uint64(0)
-	if action.AssetID() == evm.chainConfig.ExtTokenID {
+	isContract, _ := evm.AccountDB.AccountHaveCode(action.Sender())
+	if !isContract && action.AssetID() == evm.chainConfig.SysTokenID {
 		extRatio = evm.chainConfig.ExtRatio
 	}
 	err = evm.AccountDB.TransferAsset(action.Sender(), action.Recipient(), action.AssetID(), action.Value(), evm.chainConfig.ExtTokenID, extRatio, fromExtra)
