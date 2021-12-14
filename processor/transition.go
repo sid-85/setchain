@@ -178,7 +178,7 @@ func (st *StateTransition) TransitionDb() (ret []byte, usedGas uint64, failed bo
 				assetTransferFlag = false
 				break
 			}
-			if err = evm.AccountDB.DestroyAssetByRatio(st.action.Recipient(), asset.Amount, st.chainConfig.ExtTokenID, extRatio); err != nil {
+			if err = evm.AccountDB.DestroyAssetByRatio(st.action.Recipient(), asset.Amount, st.chainConfig.ExtTokenID, extRatio, evm.ForkID); err != nil {
 				vmerr = err
 				assetTransferFlag = false
 				break

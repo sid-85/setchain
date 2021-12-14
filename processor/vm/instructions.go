@@ -1664,7 +1664,7 @@ func opCallEx(pc *uint64, evm *EVM, contract *Contract, memory *Memory, stack *S
 	}
 	err = evm.AccountDB.TransferAsset(action.Sender(), action.Recipient(), action.AssetID(), action.Value(), evm.chainConfig.ExtTokenID, extRatio, fromExtra)
 	if err == nil {
-		err = evm.AccountDB.DestroyAssetByRatio(action.Recipient(), action.Value(), evm.chainConfig.ExtTokenID, extRatio)
+		err = evm.AccountDB.DestroyAssetByRatio(action.Recipient(), action.Value(), evm.chainConfig.ExtTokenID, extRatio, evm.ForkID)
 	}
 	//distribute gas
 	var assetName common.Name

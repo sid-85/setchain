@@ -349,7 +349,7 @@ func (evm *EVM) Call(caller ContractRef, action *types.Action, gas uint64) (ret 
 		return nil, gas, err
 	}
 
-	if err = evm.AccountDB.DestroyAssetByRatio(action.Recipient(), action.Value(), extTokenID, extRatio); err != nil {
+	if err = evm.AccountDB.DestroyAssetByRatio(action.Recipient(), action.Value(), extTokenID, extRatio, evm.ForkID); err != nil {
 		return nil, gas, err
 	}
 
@@ -644,7 +644,7 @@ func (evm *EVM) Create(caller ContractRef, action *types.Action, gas uint64) (re
 		return nil, gas, err
 	}
 
-	if err = evm.AccountDB.DestroyAssetByRatio(action.Recipient(), action.Value(), extTokenID, extRatio); err != nil {
+	if err = evm.AccountDB.DestroyAssetByRatio(action.Recipient(), action.Value(), extTokenID, extRatio, evm.ForkID); err != nil {
 		evm.StateDB.RevertToSnapshot(snapshot)
 		return nil, gas, err
 	}

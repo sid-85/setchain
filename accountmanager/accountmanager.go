@@ -1568,7 +1568,7 @@ func (am *AccountManager) process(accountManagerContext *types.AccountManagerCon
 		if err := am.ast.DestroyAsset(common.Name(accountManagerContext.ChainConfig.AssetName), action.AssetID(), action.Value()); err != nil {
 			return nil, err
 		}
-		if err := am.DestroyAssetByRatio(common.Name(accountManagerContext.ChainConfig.AssetName), action.Value(), extTokenID, extRatio); err != nil {
+		if err := am.DestroyAssetByRatio(common.Name(accountManagerContext.ChainConfig.AssetName), action.Value(), extTokenID, extRatio, curForkID); err != nil {
 			return nil, err
 		}
 		actionX := types.NewAction(types.Transfer, common.Name(accountManagerContext.ChainConfig.AssetName), common.Name(""), 0, action.AssetID(), 0, action.Value(), nil, nil)
@@ -1646,7 +1646,7 @@ func (am *AccountManager) process(accountManagerContext *types.AccountManagerCon
 		}
 
 	case types.Transfer:
-		if err := am.DestroyAssetByRatio(action.Recipient(), action.Value(), extTokenID, extRatio); err != nil {
+		if err := am.DestroyAssetByRatio(action.Recipient(), action.Value(), extTokenID, extRatio, curForkID); err != nil {
 			return nil, err
 		}
 	default:
@@ -1656,7 +1656,15 @@ func (am *AccountManager) process(accountManagerContext *types.AccountManagerCon
 	return internalActions, nil
 }
 
-func (am *AccountManager) DestroyAssetByRatio(accountName common.Name, value *big.Int, assetID uint64, extRatio uint64) error {
+func (am *AccountManager) DestroyAssetByRatio(accountName common.Name, value *big.Int, assetID uint64, extRatio uint64, curForkID uint64) error {
+	if curForkID >= params.ForkID6 {
+		if sign := value.Sign(); sign == 0 {
+			return nil
+		} else if sign == -1 {
+			return ErrNegativeValue
+		}
+	}
+
 	if extRatio > 0 {
 		val := new(big.Int).Div(new(big.Int).Mul(value, big.NewInt(int64(extRatio))), big.NewInt(100))
 		if err := am.SubAccountBalanceByID(accountName, assetID, val); err != nil {

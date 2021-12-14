@@ -166,6 +166,9 @@ const (
 	// ga
 	ForkID5 = uint64(5)
 
+	// deploy contract
+	ForkID6 = uint64(6)
+
 	// NextForkID is the id of next fork
 	NextForkID uint64 = ForkID5
 )
