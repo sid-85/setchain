@@ -266,7 +266,7 @@ func (a *Account) GetBalanceByID(assetID uint64) (*big.Int, error) {
 	if find {
 		return a.Balances[p].Balance, nil
 	}
-	return big.NewInt(0), ErrAccountAssetNotExist
+	return big.NewInt(0), fmt.Errorf("%s %d", ErrAccountAssetNotExist.Error(), assetID)
 }
 
 //GetBalancesList get all balance list
@@ -338,7 +338,7 @@ func (a *Account) SubBalanceByID(assetID uint64, value *big.Int) error {
 	}
 	p, find := a.binarySearch(assetID)
 	if !find {
-		return ErrAccountAssetNotExist
+		return fmt.Errorf("%s %d", ErrAccountAssetNotExist.Error(), assetID)
 	}
 	val := a.Balances[p].Balance
 	if val.Cmp(big.NewInt(0)) < 0 || val.Cmp(value) < 0 {

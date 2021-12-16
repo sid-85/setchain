@@ -19,11 +19,12 @@ package txpool
 import (
 	"math"
 	"os"
+	"strings"
 
-	"github.com/ethereum/go-ethereum/log"
 	"github.com/Second-Earth/setchain/accountmanager"
 	"github.com/Second-Earth/setchain/params"
 	"github.com/Second-Earth/setchain/types"
+	"github.com/ethereum/go-ethereum/log"
 )
 
 // IntrinsicGas computes the 'intrinsic gas' for a message with the given data.
@@ -67,7 +68,7 @@ func IntrinsicGas(accountDB *accountmanager.AccountManager, action *types.Action
 			return 0
 		}
 		_, err = toAcct.GetBalanceByID(action.AssetID())
-		if err == accountmanager.ErrAccountAssetNotExist {
+		if strings.Contains(err.Error(), accountmanager.ErrAccountAssetNotExist.Error()) {
 			return gasTable.CallValueTransferGas
 		}
 		return 0

@@ -19,6 +19,7 @@ package vm
 
 import (
 	"math/big"
+	"strings"
 	"sync/atomic"
 	"time"
 
@@ -207,7 +208,7 @@ func (evm *EVM) CheckReceipt(action *types.Action) uint64 {
 		return 0
 	}
 	_, err = toAcct.GetBalanceByID(action.AssetID())
-	if err == accountmanager.ErrAccountAssetNotExist {
+	if strings.Contains(err.Error(), accountmanager.ErrAccountAssetNotExist.Error()) {
 		return gasTable.CallValueTransferGas
 	}
 	return 0
