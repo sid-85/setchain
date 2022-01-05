@@ -68,7 +68,7 @@ func IntrinsicGas(accountDB *accountmanager.AccountManager, action *types.Action
 			return 0
 		}
 		_, err = toAcct.GetBalanceByID(action.AssetID())
-		if strings.Contains(err.Error(), accountmanager.ErrAccountAssetNotExist.Error()) {
+		if err != nil && strings.Contains(err.Error(), accountmanager.ErrAccountAssetNotExist.Error()) {
 			return gasTable.CallValueTransferGas
 		}
 		return 0

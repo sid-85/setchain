@@ -208,7 +208,7 @@ func (evm *EVM) CheckReceipt(action *types.Action) uint64 {
 		return 0
 	}
 	_, err = toAcct.GetBalanceByID(action.AssetID())
-	if strings.Contains(err.Error(), accountmanager.ErrAccountAssetNotExist.Error()) {
+	if err != nil && strings.Contains(err.Error(), accountmanager.ErrAccountAssetNotExist.Error()) {
 		return gasTable.CallValueTransferGas
 	}
 	return 0
