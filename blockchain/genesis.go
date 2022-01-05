@@ -303,9 +303,9 @@ func (g *Genesis) ToBlock(db fdb.Database) (*types.Block, []*types.Receipt, erro
 
 	for index, action := range actActions {
 		internalLogs, err := accountManager.Process(&types.AccountManagerContext{
-			Action:      action,
-			Number:      0,
-			CurForkID:   g.ForkID,
+			Action: action,
+			Number: 0,
+			// CurForkID:   g.ForkID,
 			ChainConfig: g.Config,
 		})
 		if err != nil {
@@ -317,30 +317,30 @@ func (g *Genesis) ToBlock(db fdb.Database) (*types.Block, []*types.Receipt, erro
 	astActions := []*types.Action{}
 	for _, asset := range g.AllocAssets {
 		pName := common.Name("")
-		if g.ForkID >= params.ForkID1 {
-			pName = common.Name(g.Config.SysName)
-			names := strings.Split(asset.Name, ":")
-			if len(names) != 2 {
-				return nil, nil, fmt.Errorf("asset name invalid %v", asset.Name)
-			}
-			slt := strings.Split(names[1], ".")
-			if len(slt) > 1 {
-				if ast, _ := accountManager.GetAssetInfoByName(names[0] + ":" + slt[0]); ast == nil {
-					return nil, nil, fmt.Errorf("parent asset not exist %v", ast.AssetName)
-				} else {
-					pName = ast.Owner
-				}
-			}
-		} else {
-			slt := strings.Split(asset.Name, ".")
-			if len(slt) > 1 {
-				if ast, _ := accountManager.GetAssetInfoByName(slt[0]); ast == nil {
-					return nil, nil, fmt.Errorf("parent asset not exist %v", ast.AssetName)
-				} else {
-					pName = ast.Owner
-				}
+		// if g.ForkID >= params.ForkID1 {
+		// 	pName = common.Name(g.Config.SysName)
+		// 	names := strings.Split(asset.Name, ":")
+		// 	if len(names) != 2 {
+		// 		return nil, nil, fmt.Errorf("asset name invalid %v", asset.Name)
+		// 	}
+		// 	slt := strings.Split(names[1], ".")
+		// 	if len(slt) > 1 {
+		// 		if ast, _ := accountManager.GetAssetInfoByName(names[0] + ":" + slt[0]); ast == nil {
+		// 			return nil, nil, fmt.Errorf("parent asset not exist %v", ast.AssetName)
+		// 		} else {
+		// 			pName = ast.Owner
+		// 		}
+		// 	}
+		// } else {
+		slt := strings.Split(asset.Name, ".")
+		if len(slt) > 1 {
+			if ast, _ := accountManager.GetAssetInfoByName(slt[0]); ast == nil {
+				return nil, nil, fmt.Errorf("parent asset not exist %v", ast.AssetName)
+			} else {
+				pName = ast.Owner
 			}
 		}
+		//}
 
 		ast := &am.IssueAsset{
 			AssetName:  asset.Name,
@@ -368,9 +368,9 @@ func (g *Genesis) ToBlock(db fdb.Database) (*types.Block, []*types.Receipt, erro
 
 	for index, action := range astActions {
 		internalLogs, err := accountManager.Process(&types.AccountManagerContext{
-			Action:      action,
-			Number:      0,
-			CurForkID:   g.ForkID,
+			Action: action,
+			Number: 0,
+			// CurForkID:   g.ForkID,
 			ChainConfig: g.Config,
 		})
 		if err != nil {
