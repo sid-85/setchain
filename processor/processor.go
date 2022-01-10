@@ -18,9 +18,9 @@ package processor
 
 import (
 	"fmt"
+	"strings"
 	"time"
 
-	"github.com/ethereum/go-ethereum/log"
 	"github.com/Second-Earth/setchain/accountmanager"
 	"github.com/Second-Earth/setchain/common"
 	"github.com/Second-Earth/setchain/consensus"
@@ -28,6 +28,7 @@ import (
 	"github.com/Second-Earth/setchain/processor/vm"
 	"github.com/Second-Earth/setchain/state"
 	"github.com/Second-Earth/setchain/types"
+	"github.com/ethereum/go-ethereum/log"
 )
 
 // StateProcessor is a basic Processor, which takes care of transitioning
@@ -179,11 +180,18 @@ func (p *StateProcessor) ApplyTransaction(author *common.Name, gp *common.GasPoo
 		if vmerr != nil {
 			vmerrstr = vmerr.Error()
 			log.Debug("processer apply transaction ", "hash", tx.Hash(), "err", vmerrstr)
+
+			if vmenv.ForkID < params.ForkID6 {
+				if strings.Contains(vmerrstr, accountmanager.ErrAccountAssetNotExist.Error()) {
+					vmerrstr = accountmanager.ErrAccountAssetNotExist.Error()
+				}
+			}
 		}
 		var gasAllot []*types.GasDistribution
 		for key, gas := range vmenv.FounderGasMap {
 			gasAllot = append(gasAllot, &types.GasDistribution{Account: key.ObjectName.String(), Gas: uint64(gas.Value), TypeID: gas.TypeID})
 		}
+
 		ios = append(ios, &types.ActionResult{Status: status, Index: uint64(i), GasUsed: gas, GasAllot: gasAllot, Error: vmerrstr})
 
 		internalTxLog := make([]*types.InternalAction, 0, len(vmenv.InternalTxs))
