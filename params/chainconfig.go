@@ -169,6 +169,9 @@ const (
 	// deploy contract
 	ForkID6 = uint64(6)
 
+	// dpos not be related ga
+	ForkID7 = uint64(7)
+
 	// NextForkID is the id of next fork
-	NextForkID uint64 = ForkID6
+	NextForkID uint64 = ForkID7
 )

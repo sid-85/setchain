@@ -25,6 +25,7 @@ import (
 	"time"
 
 	"github.com/Second-Earth/setchain/common"
+	"github.com/Second-Earth/setchain/params"
 	"github.com/Second-Earth/setchain/state"
 	"github.com/Second-Earth/setchain/types"
 	"github.com/ethereum/go-ethereum/log"
@@ -312,13 +313,23 @@ func (sys *System) RefundCandidate(epoch uint64, candidate string, number uint64
 
 	// db
 	stake := new(big.Int).Mul(prod.Quantity, sys.config.unitStake())
-	action, err := sys.Undelegate(candidate, stake, sys.config.ExtAssetID, sys.config.ExtAssetRatio)
-	if err != nil {
-		return fmt.Errorf("undelegate %v failed(%v)", stake, err)
+	if fid >= params.ForkID7 {
+		action, err := sys.Undelegate(candidate, stake, sys.config.ExtAssetID, 0)
+		if err != nil {
+			return fmt.Errorf("undelegate %v failed(%v)", stake, err)
+		}
+		sys.internalActions = append(sys.internalActions, &types.InternalAction{
+			Action: action.NewRPCAction(0),
+		})
+	} else {
+		action, err := sys.Undelegate(candidate, stake, sys.config.ExtAssetID, sys.config.ExtAssetRatio)
+		if err != nil {
+			return fmt.Errorf("undelegate %v failed(%v)", stake, err)
+		}
+		sys.internalActions = append(sys.internalActions, &types.InternalAction{
+			Action: action.NewRPCAction(0),
+		})
 	}
-	sys.internalActions = append(sys.internalActions, &types.InternalAction{
-		Action: action.NewRPCAction(0),
-	})
 
 	if err := sys.WithdrawCandidate(epoch, candidate, number, fid); err != nil {
 		return err
