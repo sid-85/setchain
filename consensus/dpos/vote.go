@@ -331,7 +331,9 @@ func (sys *System) RefundCandidate(epoch uint64, candidate string, number uint64
 		})
 	}
 
-	if err := sys.WithdrawCandidate(epoch, candidate, number, fid); err != nil {
+	if fid >= params.ForkID8 {
+
+	} else if err := sys.WithdrawCandidate(epoch, candidate, number, fid); err != nil {
 		return err
 	}
 
@@ -363,6 +365,9 @@ func (sys *System) RefundCandidate(epoch uint64, candidate string, number uint64
 
 // WithdrawCandidate  withdraw a candidate
 func (sys *System) WithdrawCandidate(epoch uint64, candidate string, number uint64, fid uint64) error {
+	if fid >= params.ForkID8 {
+		return fmt.Errorf("deprecated action")
+	}
 	// name validity
 	prod, err := sys.GetCandidate(epoch, candidate)
 	if err != nil {
@@ -371,6 +376,7 @@ func (sys *System) WithdrawCandidate(epoch uint64, candidate string, number uint
 	if prod == nil {
 		return fmt.Errorf("invalid candidate %v(not exist)", candidate)
 	}
+	log.Info("withdraw reward", "candidate", candidate, "number", number, "amount", prod.Reward)
 
 	withdrawed, err := sys.GetWithdrawed(prod.Name)
 	if err != nil {

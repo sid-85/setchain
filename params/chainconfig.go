@@ -172,6 +172,9 @@ const (
 	// dpos not be related ga
 	ForkID7 = uint64(7)
 
+	// cancel dpos withdraw
+	ForkID8 = uint64(8)
+
 	// NextForkID is the id of next fork
-	NextForkID uint64 = ForkID7
+	NextForkID uint64 = ForkID8
 )
