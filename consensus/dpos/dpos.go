@@ -26,6 +26,8 @@ import (
 	"sync"
 	"time"
 
+	"github.com/Second-Earth/setchain/asset"
+
 	"github.com/Second-Earth/setchain/accountmanager"
 	"github.com/Second-Earth/setchain/common"
 	"github.com/Second-Earth/setchain/consensus"
@@ -396,27 +398,75 @@ func (dpos *Dpos) Finalize(chain consensus.IChainReader, header *types.Header, t
 	}
 
 	if header.CurForkID() >= params.ForkID8 {
-		totalReward := big.NewInt(0)
 		sys := NewSystem(state, dpos.config)
-		epoch := dpos.config.epoch(header.Time.Uint64())
-		candidates, err := sys.GetCandidates(epoch)
+		reward, err := sys.GetWithdrawed("fork8")
 		if err != nil {
 			return nil, err
 		}
-		for _, candidate := range candidates {
-			if candidate.Reward.Cmp(big.NewInt(0)) > 0 {
-				totalReward = new(big.Int).Add(totalReward, candidate.Reward)
-				candidate.Reward = big.NewInt(0)
-				if err := sys.SetCandidate(candidate); err != nil {
-					return nil, err
-				}
-			}
-		}
-		if totalReward.Cmp(big.NewInt(0)) > 0 {
-			if _, err := sys.AddBalance(sys.config.SystemName, totalReward, header.CurForkID()); err != nil {
+		if reward.Cmp(big.NewInt(0)) == 0 {
+			totalReward := big.NewInt(0)
+			epoch := dpos.config.epoch(header.Time.Uint64())
+			candidates, err := sys.GetCandidates(epoch)
+			if err != nil {
 				return nil, err
 			}
-			log.Info("withdraw reward to founder", "total", totalReward.String(), "height", header.Number)
+			for _, candidate := range candidates {
+				if candidate.Reward.Cmp(big.NewInt(0)) > 0 {
+					totalReward = new(big.Int).Add(totalReward, candidate.Reward)
+					candidate.Reward = big.NewInt(0)
+					if err := sys.SetCandidate(candidate); err != nil {
+						return nil, err
+					}
+				}
+			}
+
+			accountDB, err := accountmanager.NewAccountManager(state)
+			if err != nil {
+				return nil, err
+			}
+			for _, candidate := range []string{"setregist.duplusultra", "setregist.mirrorworld"} {
+				candidateReward, err := sys.GetWithdrawed(candidate)
+				if err != nil {
+					return nil, err
+				}
+				if candidateReward.Cmp(big.NewInt(0)) > 0 {
+					amount, err := accountDB.GetAccountBalanceByID(common.StrToName(candidate), dpos.config.AssetID, 0)
+					if err != nil {
+						return nil, err
+					}
+					if candidateReward.Cmp(amount) > 0 {
+						if err := accountDB.SubAccountBalanceByID(common.StrToName(candidate), dpos.config.AssetID, amount); err != nil {
+							return nil, err
+						}
+						if err := sys.SetWithdrawed(candidate, new(big.Int).Sub(candidateReward, amount)); err != nil {
+							return nil, err
+						}
+						totalReward = new(big.Int).Add(totalReward, amount)
+					} else {
+						if err := accountDB.SubAccountBalanceByID(common.StrToName(candidate), dpos.config.AssetID, candidateReward); err != nil {
+							return nil, err
+						}
+						if err := sys.SetWithdrawed(candidate, big.NewInt(0)); err != nil {
+							return nil, err
+						}
+						totalReward = new(big.Int).Add(totalReward, candidateReward)
+					}
+				}
+			}
+			ast := asset.NewAsset(state)
+			astObj, err := ast.GetAssetObjectByID(dpos.config.AssetID)
+			if err != nil {
+				return nil, err
+			}
+			astObj.Amount = new(big.Int).Sub(astObj.Amount, totalReward)
+			astObj.AddIssue = new(big.Int).Sub(astObj.AddIssue, totalReward)
+			if err := ast.SetAssetObject(astObj); err != nil {
+				return nil, err
+			}
+			if err := sys.SetWithdrawed("fork8", totalReward); err != nil {
+				return nil, err
+			}
+			log.Info("withdraw reward rollback", "total", totalReward.String(), "height", header.Number)
 		}
 	}
 
