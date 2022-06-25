@@ -463,6 +463,7 @@ func (worker *Worker) commitTransactions(work *Work, txs *types.TransactionsByPr
 
 func (worker *Worker) commitTransaction(work *Work, tx *types.Transaction, endTime time.Time) ([]*types.Log, error) {
 	snap := work.currentState.Snapshot()
+	gas := work.currentGasPool.Gas()
 	var name *common.Name
 	if len(work.currentHeader.Coinbase.String()) > 0 {
 		name = new(common.Name)
@@ -473,8 +474,11 @@ func (worker *Worker) commitTransaction(work *Work, tx *types.Transaction, endTi
 		EndTime: endTime,
 	})
 	if err != nil {
-		work.currentState.RevertToSnapshot(snap)
-		return nil, err
+		if err == processor.ErrNonceTooLow || err == processor.ErrNonceTooHigh {
+			work.currentGasPool = new(common.GasPool).AddGas(gas)
+			work.currentState.RevertToSnapshot(snap)
+			return nil, err
+		}
 	}
 	work.currentTxs = append(work.currentTxs, tx)
 	work.currentReceipts = append(work.currentReceipts, receipt)
