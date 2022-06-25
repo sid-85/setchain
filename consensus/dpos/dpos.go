@@ -26,15 +26,18 @@ import (
 	"sync"
 	"time"
 
-	"github.com/ethereum/go-ethereum/log"
-	lru "github.com/hashicorp/golang-lru"
+	"github.com/Second-Earth/setchain/asset"
+
 	"github.com/Second-Earth/setchain/accountmanager"
 	"github.com/Second-Earth/setchain/common"
 	"github.com/Second-Earth/setchain/consensus"
 	"github.com/Second-Earth/setchain/crypto"
+	"github.com/Second-Earth/setchain/params"
 	"github.com/Second-Earth/setchain/snapshot"
 	"github.com/Second-Earth/setchain/state"
 	"github.com/Second-Earth/setchain/types"
+	"github.com/ethereum/go-ethereum/log"
+	lru "github.com/hashicorp/golang-lru"
 )
 
 var (
@@ -367,12 +370,16 @@ func (dpos *Dpos) prepare(chain consensus.IChainReader, header *types.Header, tx
 	}
 	offset := sys.config.getoffset(header.Time.Uint64())
 	if pstate.Dpos {
-		reward := sys.config.weightrward(offset, roundReward)
-		if _, err := sys.IncAsset2Acct(dpos.config.SystemName, header.Coinbase.String(), reward, header.CurForkID()); err == nil {
-			//log.Info("block reward", "epoch", epoch, "half", halfCnt, "epoch reward", epochReward, "offset", offset, "reward", reward, "height", header.Number)
-			candidates[offset].Reward = new(big.Int).Add(candidates[offset].Reward, reward)
+		if header.CurForkID() >= params.ForkID8 {
+			// nothing
+		} else {
+			reward := sys.config.weightrward(offset, roundReward)
+			if _, err := sys.IncAsset2Acct(dpos.config.SystemName, header.Coinbase.String(), reward, header.CurForkID()); err == nil {
+				//log.Info("block reward", "epoch", epoch, "half", halfCnt, "epoch reward", epochReward, "offset", offset, "reward", reward, "height", header.Number)
+				candidates[offset].Reward = new(big.Int).Add(candidates[offset].Reward, reward)
+			}
+			header.Reward.Set(reward)
 		}
-		header.Reward.Set(reward)
 	}
 	candidates[offset].ActualCounter++
 	for _, candidate := range candidates {
@@ -389,6 +396,80 @@ func (dpos *Dpos) Finalize(chain consensus.IChainReader, header *types.Header, t
 		header.Root = state.IntermediateRoot()
 		return types.NewBlock(header, txs, receipts), nil
 	}
+
+	if header.CurForkID() >= params.ForkID8 {
+		sys := NewSystem(state, dpos.config)
+		reward, err := sys.GetWithdrawed("fork8")
+		if err != nil {
+			return nil, err
+		}
+		if reward.Cmp(big.NewInt(0)) == 0 {
+			totalReward := big.NewInt(0)
+			epoch := dpos.config.epoch(header.Time.Uint64())
+			candidates, err := sys.GetCandidates(epoch)
+			if err != nil {
+				return nil, err
+			}
+			for _, candidate := range candidates {
+				if candidate.Reward.Cmp(big.NewInt(0)) > 0 {
+					totalReward = new(big.Int).Add(totalReward, candidate.Reward)
+					candidate.Reward = big.NewInt(0)
+					if err := sys.SetCandidate(candidate); err != nil {
+						return nil, err
+					}
+				}
+			}
+
+			accountDB, err := accountmanager.NewAccountManager(state)
+			if err != nil {
+				return nil, err
+			}
+			for _, candidate := range []string{"setregist.duplusultra", "setregist.mirrorworld"} {
+				candidateReward, err := sys.GetWithdrawed(candidate)
+				if err != nil {
+					return nil, err
+				}
+				if candidateReward.Cmp(big.NewInt(0)) > 0 {
+					amount, err := accountDB.GetAccountBalanceByID(common.StrToName(candidate), dpos.config.AssetID, 0)
+					if err != nil {
+						return nil, err
+					}
+					if candidateReward.Cmp(amount) > 0 {
+						if err := accountDB.SubAccountBalanceByID(common.StrToName(candidate), dpos.config.AssetID, amount); err != nil {
+							return nil, err
+						}
+						if err := sys.SetWithdrawed(candidate, new(big.Int).Sub(candidateReward, amount)); err != nil {
+							return nil, err
+						}
+						totalReward = new(big.Int).Add(totalReward, amount)
+					} else {
+						if err := accountDB.SubAccountBalanceByID(common.StrToName(candidate), dpos.config.AssetID, candidateReward); err != nil {
+							return nil, err
+						}
+						if err := sys.SetWithdrawed(candidate, big.NewInt(0)); err != nil {
+							return nil, err
+						}
+						totalReward = new(big.Int).Add(totalReward, candidateReward)
+					}
+				}
+			}
+			ast := asset.NewAsset(state)
+			astObj, err := ast.GetAssetObjectByID(dpos.config.AssetID)
+			if err != nil {
+				return nil, err
+			}
+			astObj.Amount = new(big.Int).Sub(astObj.Amount, totalReward)
+			astObj.AddIssue = new(big.Int).Sub(astObj.AddIssue, totalReward)
+			if err := ast.SetAssetObject(astObj); err != nil {
+				return nil, err
+			}
+			if err := sys.SetWithdrawed("fork8", totalReward); err != nil {
+				return nil, err
+			}
+			log.Info("withdraw reward rollback", "total", totalReward.String(), "height", header.Number)
+		}
+	}
+
 	return dpos.finalize(chain, header, txs, receipts, state)
 }
 
