@@ -27,7 +27,6 @@ import (
 	"sync/atomic"
 	"time"
 
-	"github.com/ethereum/go-ethereum/log"
 	"github.com/Second-Earth/setchain/blockchain"
 	"github.com/Second-Earth/setchain/common"
 	"github.com/Second-Earth/setchain/consensus"
@@ -39,6 +38,7 @@ import (
 	"github.com/Second-Earth/setchain/processor/vm"
 	"github.com/Second-Earth/setchain/state"
 	"github.com/Second-Earth/setchain/types"
+	"github.com/ethereum/go-ethereum/log"
 )
 
 const (
@@ -463,6 +463,7 @@ func (worker *Worker) commitTransactions(work *Work, txs *types.TransactionsByPr
 
 func (worker *Worker) commitTransaction(work *Work, tx *types.Transaction, endTime time.Time) ([]*types.Log, error) {
 	snap := work.currentState.Snapshot()
+	gas := work.currentGasPool.Gas()
 	var name *common.Name
 	if len(work.currentHeader.Coinbase.String()) > 0 {
 		name = new(common.Name)
@@ -473,6 +474,7 @@ func (worker *Worker) commitTransaction(work *Work, tx *types.Transaction, endTi
 		EndTime: endTime,
 	})
 	if err != nil {
+		work.currentGasPool = new(common.GasPool).AddGas(gas)
 		work.currentState.RevertToSnapshot(snap)
 		return nil, err
 	}
