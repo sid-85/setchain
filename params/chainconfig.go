@@ -175,6 +175,9 @@ const (
 	// cancel dpos withdraw
 	ForkID8 = uint64(8)
 
+	// fix applyTransaction
+	ForkID9 = uint64(9)
+
 	// NextForkID is the id of next fork
-	NextForkID uint64 = ForkID8
+	NextForkID uint64 = ForkID9
 )
