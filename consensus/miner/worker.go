@@ -27,7 +27,6 @@ import (
 	"sync/atomic"
 	"time"
 
-	"github.com/ethereum/go-ethereum/log"
 	"github.com/Second-Earth/setchain/blockchain"
 	"github.com/Second-Earth/setchain/common"
 	"github.com/Second-Earth/setchain/consensus"
@@ -39,6 +38,7 @@ import (
 	"github.com/Second-Earth/setchain/processor/vm"
 	"github.com/Second-Earth/setchain/state"
 	"github.com/Second-Earth/setchain/types"
+	"github.com/ethereum/go-ethereum/log"
 )
 
 const (
