@@ -426,21 +426,21 @@ func (worker *Worker) commitTransactions(work *Work, txs *types.TransactionsByPr
 		logs, err := worker.commitTransaction(work, tx, endTime)
 		switch err {
 		case vm.ErrExecOverTime:
-			log.Trace("Skipping transaction exec over time", "hash", tx.Hash())
+			log.Warn("Skipping transaction exec over time", "hash", tx.Hash())
 			txs.Pop()
 		case common.ErrGasLimitReached:
 			// Pop the current out-of-gas transaction without shifting in the next from the account
-			log.Trace("Gas limit exceeded for current block", "sender", from)
+			log.Warn("Gas limit exceeded for current block", "sender", from)
 			txs.Pop()
 
 		case processor.ErrNonceTooLow:
 			// New head notification data race between the transaction pool and miner, shift
-			log.Trace("Skipping transaction with low nonce", "sender", from, "nonce", action.Nonce())
+			log.Warn("Skipping transaction with low nonce", "sender", from, "nonce", action.Nonce())
 			txs.Shift()
 
 		case processor.ErrNonceTooHigh:
 			// Reorg notification data race between the transaction pool and miner, skip account =
-			log.Trace("Skipping account with hight nonce", "sender", from, "nonce", action.Nonce())
+			log.Warn("Skipping account with hight nonce", "sender", from, "nonce", action.Nonce())
 			txs.Pop()
 
 		case nil:
@@ -452,7 +452,7 @@ func (worker *Worker) commitTransactions(work *Work, txs *types.TransactionsByPr
 		default:
 			// Strange error, discard the transaction and get the next in line (note, the
 			// nonce-too-high clause will prevent us from executing in vain).
-			log.Debug("Transaction failed, account skipped", "hash", tx.Hash(), "err", err)
+			log.Warn("Transaction failed, account skipped", "hash", tx.Hash(), "err", err)
 			txs.Shift()
 		}
 	}
