@@ -474,11 +474,9 @@ func (worker *Worker) commitTransaction(work *Work, tx *types.Transaction, endTi
 		EndTime: endTime,
 	})
 	if err != nil {
-		if err == processor.ErrNonceTooLow || err == processor.ErrNonceTooHigh {
-			work.currentGasPool = new(common.GasPool).AddGas(gas)
-			work.currentState.RevertToSnapshot(snap)
-			return nil, err
-		}
+		work.currentGasPool = new(common.GasPool).AddGas(gas)
+		work.currentState.RevertToSnapshot(snap)
+		return nil, err
 	}
 	work.currentTxs = append(work.currentTxs, tx)
 	work.currentReceipts = append(work.currentReceipts, receipt)
